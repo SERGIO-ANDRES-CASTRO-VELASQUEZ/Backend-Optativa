@@ -1,0 +1,29 @@
+spring:
+  profiles:
+    active: dev
+  application:
+    name: backend
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+app:
+  jwt:
+    secret: ${SPORTS_JWT_SECRET:Z3VhcmRhLWVzdGEtY2xhdmUtZW4tdW4tbHVnYXItc2VndXJvLXNwb3J0cy0yMDI2LXNwcmluZy1ib290LWp3dC1zZWNyZXQ=}
+    expiration-ms: 86400000  # 24h
+    issuer: sports-backend
+  uploads:
+    dir: ${SPORTS_UPLOADS_DIR:uploads}
+    public-base-url: /files
+  cors:
+    allowed-origins: "http://localhost:8080,http://127.0.0.1:8080,http://localhost:5173,http://127.0.0.1:5500"
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
