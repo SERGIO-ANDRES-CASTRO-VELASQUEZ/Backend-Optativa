@@ -2,6 +2,7 @@ package com.sports.backend.repository;
 
 import com.sports.backend.model.Favorite;
 import com.sports.backend.model.FavoriteId;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -32,4 +33,29 @@ public interface FavoriteRepository extends JpaRepository<Favorite, FavoriteId> 
     @Modifying
     @Query("DELETE FROM Favorite f WHERE f.id.userId = :userId AND f.id.productId = :productId")
     void deleteByUserIdAndProductId(@Param("userId") Long userId, @Param("productId") Long productId);
+
+    // =========================================================================
+    // Fase 4 — Dashboard
+    // =========================================================================
+
+    /**
+     * Devuelve los N productos con más favoritos, ordenados de mayor a menor.
+     *
+     * <p>Uso en {@code DashboardService}:
+     * <pre>
+     *   List&lt;Object[]&gt; top5 = favoriteRepository
+     *       .findTopFavoriteProductIds(PageRequest.of(0, 5));
+     *   // Cada Object[] = { Long productId, Long count }
+     * </pre>
+     *
+     * @param pageable usar {@code PageRequest.of(0, N)} para los top N.
+     * @return lista de pares {@code [productId, count]} ordenada DESC por count.
+     */
+    @Query("""
+        SELECT f.id.productId, COUNT(f)
+        FROM Favorite f
+        GROUP BY f.id.productId
+        ORDER BY COUNT(f) DESC
+        """)
+    List<Object[]> findTopFavoriteProductIds(Pageable pageable);
 }

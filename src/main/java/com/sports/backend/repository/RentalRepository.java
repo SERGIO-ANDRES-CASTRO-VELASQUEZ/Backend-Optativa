@@ -5,13 +5,17 @@ import com.sports.backend.model.RentalStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
-public interface RentalRepository extends JpaRepository<Rental, Long> {
+public interface RentalRepository extends JpaRepository<Rental, Long>,
+        JpaSpecificationExecutor<Rental> {
 
     // ── Consultas del cliente ────────────────────────────────────────────────
 
@@ -100,9 +104,31 @@ public interface RentalRepository extends JpaRepository<Rental, Long> {
     // ── Queries para Fase 4 (panel admin) — se implementan en Fase 4 ─────────
     //
     // Page<Rental> searchAdmin(RentalStatus status, String q, Pageable pageable)
-    // long countActiveToday(LocalDate today)
-    // long countOverdue(LocalDate today)
-    // long countFinishedThisMonth(OffsetDateTime monthStart)
-    // BigDecimal revenueThisMonth(OffsetDateTime monthStart)
-    // List<Object[]> findTopRentedProducts(Pageable pageable)
+
+    /** Verifica si un usuario tiene alquileres (para bloquear hard delete). */
+    boolean existsByUserId(Long userId);
+
+    // ── Dashboard KPIs ────────────────────────────────────────────────────────
+
+    @Query("SELECT COUNT(r) FROM Rental r WHERE r.status = 'ACTIVO' " +
+           "AND r.startDate <= :today AND r.endDate >= :today")
+    long countActiveToday(@Param("today") LocalDate today);
+
+    @Query("SELECT COUNT(r) FROM Rental r WHERE r.status = 'ACTIVO' AND r.endDate < :today")
+    long countOverdue(@Param("today") LocalDate today);
+
+    @Query("SELECT COUNT(r) FROM Rental r WHERE r.status = 'FINALIZADO' " +
+           "AND MONTH(r.createdAt) = :month AND YEAR(r.createdAt) = :year")
+    long countFinishedThisMonth(@Param("month") int month, @Param("year") int year);
+
+    @Query("SELECT COALESCE(SUM(r.total), 0) FROM Rental r WHERE r.status <> 'CANCELADO' " +
+           "AND MONTH(r.createdAt) = :month AND YEAR(r.createdAt) = :year")
+    BigDecimal revenueThisMonth(@Param("month") int month, @Param("year") int year);
+
+    @Query("SELECT ri.product.id, COUNT(ri) FROM RentalItem ri " +
+           "GROUP BY ri.product.id ORDER BY COUNT(ri) DESC")
+    List<Object[]> findTopRentedProductIds(Pageable pageable);
+
+    @Query("SELECT COUNT(u) FROM User u WHERE MONTH(u.createdAt) = :month AND YEAR(u.createdAt) = :year")
+    long countNewUsersThisMonth(@Param("month") int month, @Param("year") int year);
 }

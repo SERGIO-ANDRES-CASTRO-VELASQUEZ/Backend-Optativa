@@ -1,5 +1,6 @@
 package com.sports.backend.service;
 
+import com.sports.backend.dto.AdminRentalSummaryDto;
 import com.sports.backend.dto.CreateRentalRequest;
 import com.sports.backend.dto.ExtendRentalRequest;
 import com.sports.backend.dto.RentalDto;
@@ -11,10 +12,17 @@ import com.sports.backend.model.Product;
 import com.sports.backend.model.Rental;
 import com.sports.backend.model.RentalItem;
 import com.sports.backend.model.RentalStatus;
+import com.sports.backend.model.User;
 import com.sports.backend.repository.ProductRepository;
 import com.sports.backend.repository.RentalRepository;
 import com.sports.backend.repository.UserRepository;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -313,21 +321,172 @@ public class RentalService {
     }
 
     // =========================================================================
-    // Métodos reservados para Fase 4 (panel admin)
+    // Fase 4 — Panel admin
     // =========================================================================
-    //
-    // Los siguientes métodos se implementarán en Fase 4 y usarán las queries
-    // ya declaradas en RentalRepository (sección "Queries para Fase 4"):
-    //
-    //   findAllAdmin(RentalStatus status, String q, Pageable pageable)
-    //     → Page<RentalSummaryDto> para el listado del panel
-    //
-    //   createForClient(Long adminId, Long clientId, CreateRentalRequest req)
-    //     → igual que create() pero con rental.createdBy = admin (mostrador)
-    //
-    //   forceChangeStatus(Long rentalId, RentalStatus newStatus)
-    //     → transición manual por admin (ej. marcar como ACTIVO o FINALIZADO)
-    //
-    //   getDashboardStats(LocalDate today)
-    //     → activos hoy, vencidos, finalizados este mes, ingresos del mes
+
+    /**
+     * Lista TODOS los alquileres con filtros opcionales para el panel admin.
+     *
+     * <p>Búsqueda {@code q} busca en el código del alquiler y el email del cliente.
+     *
+     * @param status  filtro por estado (null = todos)
+     * @param q       búsqueda libre en código y email del cliente
+     * @param pageable paginación
+     * @return página de {@link AdminRentalSummaryDto}
+     */
+    @Transactional(readOnly = true)
+    public Page<AdminRentalSummaryDto> findAllAdmin(RentalStatus status, String q, Pageable pageable) {
+
+        Specification<Rental> spec = (root, query, cb) -> {
+            // Fetch joins para evitar N+1 en el mapeo a DTO
+            if (query != null && Long.class != query.getResultType()) {
+                root.fetch("user", JoinType.LEFT);
+                root.fetch("createdBy", JoinType.LEFT);
+                root.fetch("items", JoinType.LEFT).fetch("product", JoinType.LEFT);
+            }
+
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (status != null) {
+                predicates.add(cb.equal(root.get("status"), status));
+            }
+
+            if (q != null && !q.isBlank()) {
+                String pattern = "%" + q.toLowerCase() + "%";
+                Join<Rental, User> userJoin = root.join("user", JoinType.LEFT);
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("code")), pattern),
+                        cb.like(cb.lower(userJoin.get("email")), pattern),
+                        cb.like(cb.lower(userJoin.get("fullName")), pattern)
+                ));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return rentalRepository.findAll(spec, pageable).map(AdminRentalSummaryDto::from);
+    }
+
+    /**
+     * Devuelve el detalle completo de un alquiler sin verificar propiedad.
+     * Para uso exclusivo del panel admin.
+     *
+     * @param id id del alquiler
+     * @throws ApiException 404 si no existe
+     */
+    @Transactional(readOnly = true)
+    public RentalDto findByIdAdmin(Long id) {
+        Rental rental = rentalRepository.findByIdWithItems(id)
+                .orElseThrow(() -> ApiException.notFound("Alquiler no encontrado: id=" + id));
+        return RentalDto.from(rental);
+    }
+
+    /**
+     * Crea un alquiler desde el mostrador admin.
+     *
+     * <p>Igual que {@link #create(Long, CreateRentalRequest)} pero:
+     * <ul>
+     *   <li>El titular del alquiler es {@code clientId}, no el admin.</li>
+     *   <li>Se registra {@code createdBy = admin} para auditoría.</li>
+     *   <li>La fecha de inicio puede ser hoy (sin restricción de futuro).</li>
+     * </ul>
+     *
+     * @param adminId  id del admin que opera en mostrador
+     * @param clientId id del cliente titular del alquiler
+     * @param req      datos del alquiler
+     */
+    @Transactional
+    public RentalDto createForClient(Long adminId, Long clientId, CreateRentalRequest req) {
+
+        // ── 1. Validar fechas ────────────────────────────────────────────────
+        if (!req.endDate().isAfter(req.startDate())) {
+            throw ApiException.badRequest("La fecha de fin debe ser posterior a la de inicio");
+        }
+        int days = (int) ChronoUnit.DAYS.between(req.startDate(), req.endDate());
+
+        // ── 2. Cargar admin y cliente ────────────────────────────────────────
+        var admin  = userRepository.findById(adminId)
+                .orElseThrow(() -> ApiException.notFound("Admin no encontrado"));
+        var client = userRepository.findById(clientId)
+                .orElseThrow(() -> ApiException.notFound("Cliente no encontrado: id=" + clientId));
+
+        // ── 3. Validar ítems ─────────────────────────────────────────────────
+        List<RentalItem> lines = new ArrayList<>();
+        BigDecimal subtotal = BigDecimal.ZERO;
+
+        for (RentalItemRequest itemReq : req.items()) {
+            Product product = productRepository.findById(itemReq.productId())
+                    .filter(Product::isActive)
+                    .orElseThrow(() -> ApiException.notFound(
+                            "Producto no encontrado o inactivo: id=" + itemReq.productId()));
+
+            int occupied  = rentalRepository.countOccupiedStock(
+                    product.getId(), req.startDate(), req.endDate());
+            int available = product.getStock() - occupied;
+
+            if (available < itemReq.quantity()) {
+                throw ApiException.badRequest(
+                        "Stock insuficiente para \"" + product.getName() + "\". " +
+                        "Disponible: " + available + ", solicitado: " + itemReq.quantity());
+            }
+
+            BigDecimal unitPrice = product.getPricePerDay();
+            BigDecimal lineTotal = unitPrice
+                    .multiply(BigDecimal.valueOf(itemReq.quantity()))
+                    .multiply(BigDecimal.valueOf(days));
+
+            lines.add(RentalItem.builder()
+                    .product(product)
+                    .quantity(itemReq.quantity())
+                    .days(days)
+                    .unitPrice(unitPrice)
+                    .lineTotal(lineTotal)
+                    .build());
+
+            subtotal = subtotal.add(lineTotal);
+        }
+
+        // ── 4. Código único ──────────────────────────────────────────────────
+        String yearPrefix = "SR-" + req.startDate().getYear() + "-";
+        long count = rentalRepository.countByCodeStartingWith(yearPrefix);
+        String code = yearPrefix + String.format("%05d", count + 1);
+
+        // ── 5. Construir y persistir ─────────────────────────────────────────
+        Rental rental = Rental.builder()
+                .code(code)
+                .user(client)
+                .createdBy(admin)
+                .startDate(req.startDate())
+                .endDate(req.endDate())
+                .status(RentalStatus.PENDIENTE)
+                .paymentMethod(req.paymentMethod())
+                .subtotal(subtotal)
+                .total(subtotal)
+                .build();
+
+        for (RentalItem line : lines) {
+            line.setRental(rental);
+            rental.getItems().add(line);
+        }
+
+        rentalRepository.save(rental);
+        return RentalDto.from(rental);
+    }
+
+    /**
+     * Cambia el estado de un alquiler de forma forzada (sin restricciones de flujo).
+     * Solo disponible para admins.
+     *
+     * @param rentalId  id del alquiler
+     * @param newStatus nuevo estado a asignar
+     * @throws ApiException 404 si el alquiler no existe
+     */
+    @Transactional
+    public RentalDto forceChangeStatus(Long rentalId, RentalStatus newStatus) {
+        Rental rental = rentalRepository.findByIdWithItems(rentalId)
+                .orElseThrow(() -> ApiException.notFound("Alquiler no encontrado: id=" + rentalId));
+        rental.setStatus(newStatus);
+        rentalRepository.save(rental);
+        return RentalDto.from(rental);
+    }
 }

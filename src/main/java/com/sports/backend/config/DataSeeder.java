@@ -39,6 +39,16 @@ public class DataSeeder implements CommandLineRunner {
     private static final String DEFAULT_CLIENT_EMAIL    = "cliente@sports.com";
     private static final String DEFAULT_CLIENT_PASSWORD = "Cliente1234";
 
+    // Usuarios extra para pruebas de Fase 4
+    private static final String CLIENT2_EMAIL    = "maria@sports.com";
+    private static final String CLIENT2_PASSWORD = "Cliente1234";
+
+    private static final String CLIENT3_EMAIL    = "juan@sports.com";
+    private static final String CLIENT3_PASSWORD = "Cliente1234";
+
+    private static final String ADMIN2_EMAIL    = "supervisor@sports.com";
+    private static final String ADMIN2_PASSWORD = "Admin1234";
+
     private final UserRepository     userRepository;
     private final CategoryRepository categoryRepository;
     private final ProductRepository  productRepository;
@@ -59,6 +69,7 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) {
         seedAdmin();
         seedClientDemo();
+        seedExtraUsersForFase4();
         seedCategoriesAndProducts();
     }
 
@@ -103,6 +114,53 @@ public class DataSeeder implements CommandLineRunner {
 
         userRepository.save(client);
         log.info("==> Cliente demo creado: {} / {}", DEFAULT_CLIENT_EMAIL, DEFAULT_CLIENT_PASSWORD);
+    }
+
+    // =========================================================================
+    // Fase 4 — Usuarios extra para pruebas del panel admin
+    // =========================================================================
+
+    private void seedExtraUsersForFase4() {
+
+        if (!userRepository.existsByEmail(CLIENT2_EMAIL)) {
+            userRepository.save(User.builder()
+                    .fullName("María García López")
+                    .username("maria.garcia")
+                    .email(CLIENT2_EMAIL)
+                    .passwordHash(passwordEncoder.encode(CLIENT2_PASSWORD))
+                    .phone("3109876543")
+                    .idDocument("9876543210")
+                    .role(Role.CLIENT)
+                    .active(true)
+                    .build());
+            log.info("==> Cliente 2 creado: {} / {}", CLIENT2_EMAIL, CLIENT2_PASSWORD);
+        }
+
+        if (!userRepository.existsByEmail(CLIENT3_EMAIL)) {
+            userRepository.save(User.builder()
+                    .fullName("Juan Pérez Martínez")
+                    .username("juan.perez")
+                    .email(CLIENT3_EMAIL)
+                    .passwordHash(passwordEncoder.encode(CLIENT3_PASSWORD))
+                    .phone("3157654321")
+                    .idDocument("1122334455")
+                    .role(Role.CLIENT)
+                    .active(true)
+                    .build());
+            log.info("==> Cliente 3 creado: {} / {}", CLIENT3_EMAIL, CLIENT3_PASSWORD);
+        }
+
+        if (!userRepository.existsByEmail(ADMIN2_EMAIL)) {
+            userRepository.save(User.builder()
+                    .fullName("Supervisor SportRent")
+                    .username("supervisor")
+                    .email(ADMIN2_EMAIL)
+                    .passwordHash(passwordEncoder.encode(ADMIN2_PASSWORD))
+                    .role(Role.ADMIN)
+                    .active(true)
+                    .build());
+            log.info("==> Admin 2 creado: {} / {}", ADMIN2_EMAIL, ADMIN2_PASSWORD);
+        }
     }
 
     // =========================================================================
@@ -152,8 +210,8 @@ public class DataSeeder implements CommandLineRunner {
         buildProduct(
                 "Bicicleta de Montaña Trek",
                 "Bicicleta de montaña Trek Marlin 7 con cuadro de aluminio ligero, " +
-                "suspensión delantera RockShox, 21 velocidades Shimano y frenos hidráulicos. " +
-                "Ideal para terrenos irregulares y senderos de montaña.",
+                        "suspensión delantera RockShox, 21 velocidades Shimano y frenos hidráulicos. " +
+                        "Ideal para terrenos irregulares y senderos de montaña.",
                 cats.get("ciclismo"),
                 new BigDecimal("45000"),
                 5,
@@ -170,8 +228,8 @@ public class DataSeeder implements CommandLineRunner {
         buildProduct(
                 "Bicicleta de Ruta Colnago",
                 "Bicicleta de ruta Colnago de carbono de alta performance, " +
-                "diseñada para recorridos largos en carretera. Transmisión Shimano 105, " +
-                "peso total 8.2 kg y geometría aerodinámica.",
+                        "diseñada para recorridos largos en carretera. Transmisión Shimano 105, " +
+                        "peso total 8.2 kg y geometría aerodinámica.",
                 cats.get("ciclismo"),
                 new BigDecimal("55000"),
                 3,
@@ -188,7 +246,7 @@ public class DataSeeder implements CommandLineRunner {
         buildProduct(
                 "Bicicleta Trekking Híbrida",
                 "Bicicleta híbrida ideal para recorridos urbanos y caminos de tierra. " +
-                "Cuadro de aluminio, horquilla rígida, manubrio plano y portaequipaje trasero incluido.",
+                        "Cuadro de aluminio, horquilla rígida, manubrio plano y portaequipaje trasero incluido.",
                 cats.get("ciclismo"),
                 new BigDecimal("35000"),
                 6,
@@ -205,8 +263,8 @@ public class DataSeeder implements CommandLineRunner {
         buildProduct(
                 "Kayak Individual Plástico",
                 "Kayak de travesía para una persona, fabricado en polietileno de alta densidad. " +
-                "Estable y fácil de maniobrar, apto para ríos tranquilos y lagos. " +
-                "Incluye remo y chaleco salvavidas.",
+                        "Estable y fácil de maniobrar, apto para ríos tranquilos y lagos. " +
+                        "Incluye remo y chaleco salvavidas.",
                 cats.get("acuaticos"),
                 new BigDecimal("80000"),
                 4,
@@ -223,8 +281,8 @@ public class DataSeeder implements CommandLineRunner {
         buildProduct(
                 "Tabla de Surf 7 Pies Epoxy",
                 "Tabla de surf longboard de 7 pies en material epoxy, perfecta para principiantes " +
-                "y olas medianas. Mayor flotabilidad y estabilidad que las tablas de poliuretano. " +
-                "Diseño clásico con tres quillas (thruster).",
+                        "y olas medianas. Mayor flotabilidad y estabilidad que las tablas de poliuretano. " +
+                        "Diseño clásico con tres quillas (thruster).",
                 cats.get("acuaticos"),
                 new BigDecimal("60000"),
                 3,
@@ -241,8 +299,8 @@ public class DataSeeder implements CommandLineRunner {
         buildProduct(
                 "Carpa Camping 4 Personas",
                 "Carpa doble capa impermeable con capacidad para 4 personas. " +
-                "Estructura de varillas de fibra de vidrio, suelo cosido y mosquitero incluido. " +
-                "Montaje rápido de 10 minutos. Ideal para camping familiar y senderismo.",
+                        "Estructura de varillas de fibra de vidrio, suelo cosido y mosquitero incluido. " +
+                        "Montaje rápido de 10 minutos. Ideal para camping familiar y senderismo.",
                 cats.get("camping"),
                 new BigDecimal("50000"),
                 5,
@@ -260,8 +318,8 @@ public class DataSeeder implements CommandLineRunner {
         buildProduct(
                 "Raqueta de Tenis Wilson Pro Staff",
                 "Raqueta de tenis Wilson Pro Staff 97 RF, diseñada para jugadores intermedios " +
-                "y avanzados. Marco de grafito Braided con cuerda incluida. " +
-                "Ofrece control y potencia equilibrados en cancha.",
+                        "y avanzados. Marco de grafito Braided con cuerda incluida. " +
+                        "Ofrece control y potencia equilibrados en cancha.",
                 cats.get("tenis"),
                 new BigDecimal("25000"),
                 8,
@@ -279,8 +337,8 @@ public class DataSeeder implements CommandLineRunner {
         buildProduct(
                 "Patineta Eléctrica 25 km/h",
                 "Scooter eléctrico plegable con autonomía de hasta 25 km por carga. " +
-                "Motor de 350 W, frenos eléctrico y mecánico de disco, " +
-                "pantalla LED y luz delantera integrada. Apto para pavimento urbano.",
+                        "Motor de 350 W, frenos eléctrico y mecánico de disco, " +
+                        "pantalla LED y luz delantera integrada. Apto para pavimento urbano.",
                 cats.get("fitness"),
                 new BigDecimal("70000"),
                 4,
@@ -298,8 +356,8 @@ public class DataSeeder implements CommandLineRunner {
         buildProduct(
                 "Set de Pesas 20 kg",
                 "Set completo de pesas de hierro fundido de 20 kg para entrenamiento de fuerza. " +
-                "Incluye barra olímpica de 1.2 m y collares de seguridad. " +
-                "Distribuido en discos de 1.25, 2.5 y 5 kg.",
+                        "Incluye barra olímpica de 1.2 m y collares de seguridad. " +
+                        "Distribuido en discos de 1.25, 2.5 y 5 kg.",
                 cats.get("fitness"),
                 new BigDecimal("30000"),
                 6,
@@ -316,8 +374,8 @@ public class DataSeeder implements CommandLineRunner {
         buildProduct(
                 "Mancuernas Ajustables 2–20 kg",
                 "Par de mancuernas ajustables de acero con sistema de carga rápida. " +
-                "Rango de 2 a 20 kg por unidad (ajuste en incrementos de 2 kg). " +
-                "Ideales para rutinas de fuerza en casa o gimnasio.",
+                        "Rango de 2 a 20 kg por unidad (ajuste en incrementos de 2 kg). " +
+                        "Ideales para rutinas de fuerza en casa o gimnasio.",
                 cats.get("fitness"),
                 new BigDecimal("40000"),
                 4,
