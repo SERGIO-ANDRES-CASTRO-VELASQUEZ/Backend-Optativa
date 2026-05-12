@@ -8,9 +8,19 @@ public record UserDto(
         String fullName,
         String username,
         String email,
-        Role role
+        Role role,
+        String phone,
+        String idDocument
 ) {
     public static UserDto from(User u) {
-        return new UserDto(u.getId(), u.getFullName(), u.getUsername(), u.getEmail(), u.getRole());
+        return new UserDto(
+                u.getId(),
+                u.getFullName(),
+                u.getUsername(),
+                u.getEmail(),
+                u.getRole(),
+                u.getPhone(),
+                u.getIdDocument()
+        );
     }
 }

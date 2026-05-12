@@ -338,11 +338,14 @@ public class RentalService {
     public Page<AdminRentalSummaryDto> findAllAdmin(RentalStatus status, String q, Pageable pageable) {
 
         Specification<Rental> spec = (root, query, cb) -> {
-            // Fetch joins para evitar N+1 en el mapeo a DTO
+            // Fetch joins para evitar N+1 en el mapeo a DTO (solo en SELECT, no en COUNT)
+            Join<Object, Object> userPath;
             if (query != null && Long.class != query.getResultType()) {
-                root.fetch("user", JoinType.LEFT);
+                userPath = (Join<Object, Object>) root.fetch("user", JoinType.LEFT);
                 root.fetch("createdBy", JoinType.LEFT);
                 root.fetch("items", JoinType.LEFT).fetch("product", JoinType.LEFT);
+            } else {
+                userPath = root.join("user", JoinType.LEFT);
             }
 
             List<Predicate> predicates = new ArrayList<>();
@@ -353,11 +356,10 @@ public class RentalService {
 
             if (q != null && !q.isBlank()) {
                 String pattern = "%" + q.toLowerCase() + "%";
-                Join<Rental, User> userJoin = root.join("user", JoinType.LEFT);
                 predicates.add(cb.or(
                         cb.like(cb.lower(root.get("code")), pattern),
-                        cb.like(cb.lower(userJoin.get("email")), pattern),
-                        cb.like(cb.lower(userJoin.get("fullName")), pattern)
+                        cb.like(cb.lower(userPath.get("email")), pattern),
+                        cb.like(cb.lower(userPath.get("fullName")), pattern)
                 ));
             }
 

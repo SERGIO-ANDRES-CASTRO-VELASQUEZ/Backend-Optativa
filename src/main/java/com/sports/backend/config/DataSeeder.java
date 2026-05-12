@@ -1,13 +1,18 @@
 package com.sports.backend.config;
 
 import com.sports.backend.model.Category;
+import com.sports.backend.model.PaymentMethod;
 import com.sports.backend.model.Product;
 import com.sports.backend.model.ProductImage;
 import com.sports.backend.model.ProductSpec;
+import com.sports.backend.model.Rental;
+import com.sports.backend.model.RentalItem;
+import com.sports.backend.model.RentalStatus;
 import com.sports.backend.model.Role;
 import com.sports.backend.model.User;
 import com.sports.backend.repository.CategoryRepository;
 import com.sports.backend.repository.ProductRepository;
+import com.sports.backend.repository.RentalRepository;
 import com.sports.backend.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +22,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -25,8 +31,9 @@ import java.util.Map;
  * Se ejecuta una sola vez al arrancar la aplicación.
  *
  * Fase 1: admin inicial.
- * Fase 2: 7 categorías + 10 productos demo.
+ * Fase 2: 7 categorías + 12 productos demo (añadidos Fútbol x2, Boxeo x2).
  * Fase 3: cliente demo para pruebas de alquileres.
+ * Fase 4: usuarios extra + alquileres demo para probar el panel admin y dashboard.
  */
 @Component
 public class DataSeeder implements CommandLineRunner {
@@ -37,7 +44,7 @@ public class DataSeeder implements CommandLineRunner {
     private static final String DEFAULT_ADMIN_PASSWORD = "Admin1234";
 
     private static final String DEFAULT_CLIENT_EMAIL    = "cliente@sports.com";
-    private static final String DEFAULT_CLIENT_PASSWORD = "Cliente1234";
+        private static final String DEFAULT_CLIENT_PASSWORD = "Cliente1234";
 
     // Usuarios extra para pruebas de Fase 4
     private static final String CLIENT2_EMAIL    = "maria@sports.com";
@@ -52,15 +59,18 @@ public class DataSeeder implements CommandLineRunner {
     private final UserRepository     userRepository;
     private final CategoryRepository categoryRepository;
     private final ProductRepository  productRepository;
+    private final RentalRepository   rentalRepository;   // ← NUEVO: para alquileres demo
     private final PasswordEncoder    passwordEncoder;
 
     public DataSeeder(UserRepository userRepository,
                       CategoryRepository categoryRepository,
                       ProductRepository productRepository,
+                      RentalRepository rentalRepository,
                       PasswordEncoder passwordEncoder) {
         this.userRepository     = userRepository;
         this.categoryRepository = categoryRepository;
         this.productRepository  = productRepository;
+        this.rentalRepository   = rentalRepository;
         this.passwordEncoder    = passwordEncoder;
     }
 
@@ -71,6 +81,7 @@ public class DataSeeder implements CommandLineRunner {
         seedClientDemo();
         seedExtraUsersForFase4();
         seedCategoriesAndProducts();
+        seedRentalsDemo();           // ← NUEVO: alquileres demo
     }
 
     // =========================================================================
@@ -215,7 +226,7 @@ public class DataSeeder implements CommandLineRunner {
                 cats.get("ciclismo"),
                 new BigDecimal("45000"),
                 5,
-                List.of("/img/bike-mountain.jpg"),
+                List.of("https://images.unsplash.com/photo-1544191696-102dbdaeeaa0?w=600&q=80"),
                 List.of(
                         spec("Material", "Aluminio 6061"),
                         spec("Velocidades", "21 Shimano"),
@@ -233,7 +244,7 @@ public class DataSeeder implements CommandLineRunner {
                 cats.get("ciclismo"),
                 new BigDecimal("55000"),
                 3,
-                List.of("/img/bike-route.jpg"),
+                List.of("https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=600&q=80"),
                 List.of(
                         spec("Material", "Fibra de carbono"),
                         spec("Peso", "8.2 kg"),
@@ -250,7 +261,7 @@ public class DataSeeder implements CommandLineRunner {
                 cats.get("ciclismo"),
                 new BigDecimal("35000"),
                 6,
-                List.of("/img/bike-trek.jpg"),
+                List.of("https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=600&q=80"),
                 List.of(
                         spec("Material", "Aluminio"),
                         spec("Velocidades", "7 Shimano"),
@@ -268,7 +279,7 @@ public class DataSeeder implements CommandLineRunner {
                 cats.get("acuaticos"),
                 new BigDecimal("80000"),
                 4,
-                List.of("/img/kayak.jpg"),
+                List.of("https://images.unsplash.com/photo-1506953823976-52e1fdc0149a?w=600&q=80"),
                 List.of(
                         spec("Capacidad", "120 kg"),
                         spec("Longitud", "3.5 m"),
@@ -277,23 +288,6 @@ public class DataSeeder implements CommandLineRunner {
                 )
         );
 
-        // ---- 5. Tabla de Surf 7' -------------------------------------------
-        buildProduct(
-                "Tabla de Surf 7 Pies Epoxy",
-                "Tabla de surf longboard de 7 pies en material epoxy, perfecta para principiantes " +
-                        "y olas medianas. Mayor flotabilidad y estabilidad que las tablas de poliuretano. " +
-                        "Diseño clásico con tres quillas (thruster).",
-                cats.get("acuaticos"),
-                new BigDecimal("60000"),
-                3,
-                List.of("/img/surfboard.jpg"),
-                List.of(
-                        spec("Longitud", "7 pies (213 cm)"),
-                        spec("Material", "Epoxy"),
-                        spec("Volumen", "52 L"),
-                        spec("Quillas", "Thruster (3)")
-                )
-        );
 
         // ---- 6. Carpa para 4 personas ----------------------------------------
         buildProduct(
@@ -304,7 +298,7 @@ public class DataSeeder implements CommandLineRunner {
                 cats.get("camping"),
                 new BigDecimal("50000"),
                 5,
-                List.of("/img/camping-tent.jpg"),
+                List.of("https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&q=80"),
                 List.of(
                         spec("Capacidad", "4 personas"),
                         spec("Impermeable", "3000 mm HH"),
@@ -323,7 +317,7 @@ public class DataSeeder implements CommandLineRunner {
                 cats.get("tenis"),
                 new BigDecimal("25000"),
                 8,
-                List.of("/img/tennis-wilson.jpg"),
+                List.of("https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=600&q=80"),
                 List.of(
                         spec("Peso", "340 g"),
                         spec("Balance", "Neutro (32 cm)"),
@@ -342,7 +336,7 @@ public class DataSeeder implements CommandLineRunner {
                 cats.get("fitness"),
                 new BigDecimal("70000"),
                 4,
-                List.of("/img/scooter.jpg"),
+                List.of("https://images.unsplash.com/photo-1598520106830-8c45c2035460?w=600&q=80"),
                 List.of(
                         spec("Autonomía", "25 km"),
                         spec("Velocidad máxima", "25 km/h"),
@@ -361,7 +355,7 @@ public class DataSeeder implements CommandLineRunner {
                 cats.get("fitness"),
                 new BigDecimal("30000"),
                 6,
-                List.of("/img/weights-20kg.jpg"),
+                List.of("https://images.unsplash.com/photo-1517963628607-235ccdd5476c?w=600&q=80"),
                 List.of(
                         spec("Peso total", "20 kg"),
                         spec("Material", "Hierro fundido"),
@@ -379,7 +373,10 @@ public class DataSeeder implements CommandLineRunner {
                 cats.get("fitness"),
                 new BigDecimal("40000"),
                 4,
-                List.of("/img/weights-1.jpg", "/img/weights-2.jpg"),   // 2 imágenes
+                List.of(
+                        "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&q=80",
+                        "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=600&q=80"
+                ),
                 List.of(
                         spec("Rango de peso", "2 – 20 kg c/u"),
                         spec("Material", "Acero cromado"),
@@ -387,6 +384,173 @@ public class DataSeeder implements CommandLineRunner {
                         spec("Cantidad", "Par (x2)")
                 )
         );
+
+        // ---- 11. Balón de Fútbol Profesional --------------------------------
+        buildProduct(
+                "Balón de Fútbol Profesional",
+                "Balón de fútbol Nike Flight talla 5, cubierto en cuero sintético de alta durabilidad " +
+                        "con cámara de butilo para retención óptima del aire. " +
+                        "Certificado FIFA Quality Pro. Ideal para partidos oficiales y entrenamiento.",
+                cats.get("futbol"),
+                new BigDecimal("12000"),
+                12,
+                List.of("https://images.unsplash.com/photo-1614632537190-23e4146777db?w=600&q=80"),
+                List.of(
+                        spec("Talla", "5 (reglamentaria adultos)"),
+                        spec("Material exterior", "Cuero sintético TPU"),
+                        spec("Interior", "Cámara de butilo"),
+                        spec("Certificación", "FIFA Quality Pro")
+                )
+        );
+
+        // ---- 12. Set de Espinilleras y Medias -------------------------------
+        buildProduct(
+                "Set Espinilleras y Medias de Fútbol",
+                "Kit completo de espinilleras adulto con tobillera integrada y medias a juego. " +
+                        "Espinilleras de polipropileno de alto impacto con relleno EVA. " +
+                        "Disponible en tallas S, M y L.",
+                cats.get("futbol"),
+                new BigDecimal("8000"),
+                20,
+                List.of("https://images.unsplash.com/photo-1553778263-73a83bab9b0c?w=600&q=80"),
+                List.of(
+                        spec("Material espinillera", "Polipropileno + EVA"),
+                        spec("Tallas", "S / M / L"),
+                        spec("Incluye", "Espinilleras + medias"),
+                        spec("Uso", "Adulto")
+                )
+        );
+
+        // ---- 13. Guantes de Boxeo Everlast ----------------------------------
+        buildProduct(
+                "Guantes de Boxeo Everlast 16 oz",
+                "Guantes de boxeo Everlast Pro Style de 16 oz, fabricados en cuero sintético " +
+                        "con relleno de espuma de alta densidad. " +
+                        "Velcro de cierre rápido. Aptos para saco, sparring y manoplas.",
+                cats.get("boxeo"),
+                new BigDecimal("18000"),
+                10,
+                List.of("https://images.unsplash.com/photo-1591117207239-788bf8de6c3b?w=600&q=80"),
+                List.of(
+                        spec("Peso", "16 oz"),
+                        spec("Material", "Cuero sintético"),
+                        spec("Cierre", "Velcro"),
+                        spec("Uso", "Saco / sparring / manoplas")
+                )
+        );
+
+        // ---- 14. Saco de Boxeo con Soporte ----------------------------------
+        buildProduct(
+                "Saco de Boxeo 70 kg con Cadena",
+                "Saco de boxeo relleno de arena y tela, peso aproximado 70 kg. " +
+                        "Cubierta exterior de cuero sintético resistente a golpes. " +
+                        "Incluye cadena de suspensión y mosquetones de acero. " +
+                        "Para instalación en techo o marco fijo.",
+                cats.get("boxeo"),
+                new BigDecimal("35000"),
+                3,
+                List.of("https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80"),
+                List.of(
+                        spec("Peso", "~70 kg"),
+                        spec("Altura", "120 cm"),
+                        spec("Diámetro", "40 cm"),
+                        spec("Material", "Cuero sintético"),
+                        spec("Incluye", "Cadena + mosquetones de acero")
+                )
+        );
+    }
+
+    // =========================================================================
+    // NUEVO — Fase 4: Alquileres demo para panel admin y dashboard
+    // =========================================================================
+    // Guard: no siembra si ya existen alquileres.
+    // Los alquileres se crean directamente (sin pasar por RentalService) para
+    // poder controlar el estado y las fechas con libertad.
+    // =========================================================================
+
+    private void seedRentalsDemo() {
+        if (rentalRepository.count() > 0) return;
+
+        User cliente  = userRepository.findByEmail(DEFAULT_CLIENT_EMAIL).orElse(null);
+        User maria    = userRepository.findByEmail(CLIENT2_EMAIL).orElse(null);
+        User juan     = userRepository.findByEmail(CLIENT3_EMAIL).orElse(null);
+        User admin    = userRepository.findByEmail(DEFAULT_ADMIN_EMAIL).orElse(null);
+
+        if (cliente == null || maria == null || juan == null || admin == null) {
+            log.warn("==> No se pudieron sembrar alquileres demo: faltan usuarios.");
+            return;
+        }
+
+        List<Product> products = productRepository.findAll();
+        if (products.size() < 4) {
+            log.warn("==> No se pudieron sembrar alquileres demo: faltan productos.");
+            return;
+        }
+
+        Product p1 = products.get(0);  // Bicicleta de Montaña Trek
+        Product p2 = products.get(1);  // Bicicleta de Ruta Colnago
+        Product p3 = products.get(6);  // Raqueta de Tenis
+        Product p4 = products.get(3);  // Kayak Individual
+
+        LocalDate today = LocalDate.now();
+
+        // ── 1. Alquiler PENDIENTE (futuro, cancelable desde el cliente) ───────
+        buildRental(
+                cliente, null,
+                today.plusDays(5), today.plusDays(10),
+                RentalStatus.PENDIENTE, PaymentMethod.TARJETA,
+                List.of(item(p1, 1, 5))
+        );
+
+        // ── 2. Alquiler ACTIVO (en curso hoy — contribuye al KPI activeRentalsToday) ──
+        buildRental(
+                maria, null,
+                today.minusDays(1), today.plusDays(4),
+                RentalStatus.ACTIVO, PaymentMethod.PAYPAL,
+                List.of(item(p3, 2, 5))
+        );
+
+        // ── 3. Alquiler ACTIVO extendible (cliente para testear extend) ──────
+        buildRental(
+                cliente, null,
+                today, today.plusDays(7),
+                RentalStatus.ACTIVO, PaymentMethod.EFECTIVO,
+                List.of(item(p2, 1, 7), item(p3, 1, 7))
+        );
+
+        // ── 4. Alquiler FINALIZADO este mes (contribuye a finishedThisMonth y revenueThisMonth) ──
+        buildRental(
+                juan, null,
+                today.minusDays(10), today.minusDays(3),
+                RentalStatus.FINALIZADO, PaymentMethod.TARJETA,
+                List.of(item(p4, 1, 7))
+        );
+
+        // ── 5. Alquiler FINALIZADO — creado por admin en mostrador ───────────
+        buildRental(
+                maria, admin,
+                today.minusDays(15), today.minusDays(8),
+                RentalStatus.FINALIZADO, PaymentMethod.EFECTIVO,
+                List.of(item(p1, 1, 7))
+        );
+
+        // ── 6. Alquiler VENCIDO (contribuye al KPI overdueRentals) ────────────
+        buildRental(
+                juan, null,
+                today.minusDays(20), today.minusDays(5),
+                RentalStatus.VENCIDO, PaymentMethod.PAYPAL,
+                List.of(item(p2, 1, 15))
+        );
+
+        // ── 7. Alquiler CANCELADO (muestra flujo completo en el panel) ────────
+        buildRental(
+                cliente, null,
+                today.plusDays(2), today.plusDays(6),
+                RentalStatus.CANCELADO, PaymentMethod.TARJETA,
+                List.of(item(p3, 1, 4))
+        );
+
+        log.info("==> {} alquileres demo sembrados", rentalRepository.count());
     }
 
     // =========================================================================
@@ -423,6 +587,71 @@ public class DataSeeder implements CommandLineRunner {
         }
 
         productRepository.save(product);
+    }
+
+    /**
+     * Construye y persiste un alquiler con sus ítems.
+     *
+     * @param user        cliente dueño del alquiler
+     * @param createdBy   admin que lo creó en mostrador (null si lo creó el cliente)
+     * @param startDate   fecha de inicio
+     * @param endDate     fecha de fin
+     * @param status      estado inicial (PENDIENTE, ACTIVO, FINALIZADO, CANCELADO, VENCIDO)
+     * @param payment     método de pago
+     * @param rentalItems ítems del alquiler (ya construidos con quantity, days, unitPrice)
+     */
+    private void buildRental(User user, User createdBy,
+                             LocalDate startDate, LocalDate endDate,
+                             RentalStatus status, PaymentMethod payment,
+                             List<RentalItem> rentalItems) {
+
+        // Calcular totales
+        BigDecimal subtotal = rentalItems.stream()
+                .map(RentalItem::getLineTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Generar código único SR-YYYY-NNNNN
+        int year  = startDate.getYear();
+        long count = rentalRepository.countByCodeStartingWith("SR-" + year + "-");
+        String code = "SR-" + year + "-" + String.format("%05d", count + 1);
+
+        Rental rental = Rental.builder()
+                .code(code)
+                .user(user)
+                .createdBy(createdBy)
+                .startDate(startDate)
+                .endDate(endDate)
+                .status(status)
+                .paymentMethod(payment)
+                .subtotal(subtotal)
+                .deposit(BigDecimal.ZERO)
+                .total(subtotal)
+                .build();
+
+        // Asociar ítems al alquiler
+        for (RentalItem ri : rentalItems) {
+            ri.setRental(rental);
+            rental.getItems().add(ri);
+        }
+
+        rentalRepository.save(rental);
+        log.debug("==> Alquiler demo sembrado: {} | {} | {} – {}", code, status, startDate, endDate);
+    }
+
+    /**
+     * Crea un RentalItem (sin persistir) con snapshot del precio del producto.
+     */
+    private static RentalItem item(Product product, int quantity, int days) {
+        BigDecimal unitPrice  = product.getPricePerDay();
+        BigDecimal lineTotal  = unitPrice.multiply(BigDecimal.valueOf((long) quantity * days));
+
+        return RentalItem.builder()
+                .product(product)
+                .quantity(quantity)
+                .days(days)
+                .unitPrice(unitPrice)
+                .lineTotal(lineTotal)
+                .build();
     }
 
     private static ProductSpec spec(String key, String value) {

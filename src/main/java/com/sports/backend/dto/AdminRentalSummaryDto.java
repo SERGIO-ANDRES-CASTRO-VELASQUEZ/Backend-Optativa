@@ -22,7 +22,7 @@ public record AdminRentalSummaryDto(
         Long userId,
         String userFullName,
         String userEmail,
-        String createdByName,       // null si fue creado por el cliente
+        String createdByName,
         LocalDate startDate,
         LocalDate endDate,
         String status,
@@ -30,6 +30,7 @@ public record AdminRentalSummaryDto(
         BigDecimal total,
         int itemCount,
         String firstProductName,
+        String firstProductImageUrl,
         OffsetDateTime createdAt
 ) {
     /**
@@ -43,6 +44,13 @@ public record AdminRentalSummaryDto(
         String createdByName = r.getCreatedBy() != null
                 ? r.getCreatedBy().getFullName()
                 : null;
+
+        String firstImg = null;
+        if (first != null
+                && first.getProduct().getImages() != null
+                && !first.getProduct().getImages().isEmpty()) {
+            firstImg = first.getProduct().getImages().get(0).getUrl();
+        }
 
         return new AdminRentalSummaryDto(
                 r.getId(),
@@ -58,6 +66,7 @@ public record AdminRentalSummaryDto(
                 r.getTotal(),
                 r.getItems() == null ? 0 : r.getItems().size(),
                 first != null ? first.getProduct().getName() : null,
+                firstImg,
                 r.getCreatedAt()
         );
     }

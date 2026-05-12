@@ -29,6 +29,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Map;
+
 /**
  * Controlador del panel de administración para la gestión de productos.
  *
@@ -253,6 +255,31 @@ public class AdminProductController {
      * @param imageId id de la imagen a eliminar
      * @return 204 No Content
      */
+    // =========================================================================
+    // POST /api/admin/products/{id}/images/url  — añadir imagen por URL
+    // =========================================================================
+
+    /**
+     * Añade una imagen externa (URL) a un producto sin necesidad de subir archivo.
+     *
+     * @param id   id del producto
+     * @param body JSON con campo {@code url}
+     * @return 201 Created con el {@link AdminProductDto} actualizado
+     */
+    @PostMapping("/{id}/images/url")
+    @Operation(summary = "Añadir imagen por URL", description = "Asocia una URL externa de imagen al producto.")
+    public ResponseEntity<AdminProductDto> addImageByUrl(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body
+    ) {
+        String url = body.get("url");
+        if (url == null || url.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        AdminProductDto updated = productService.addImage(id, url.trim());
+        return ResponseEntity.status(201).body(updated);
+    }
+
     @DeleteMapping("/{id}/images/{imageId}")
     @Operation(
             summary = "Eliminar imagen de producto",

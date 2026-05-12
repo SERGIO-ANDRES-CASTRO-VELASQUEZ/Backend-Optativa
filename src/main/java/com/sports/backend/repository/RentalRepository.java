@@ -91,11 +91,17 @@ public interface RentalRepository extends JpaRepository<Rental, Long>,
      * Carga los alquileres de un usuario con items y productos en una sola query.
      * Se usa en findMine para evitar N+1 al construir RentalSummaryDto.
      */
+    /**
+     * Carga los alquileres de un usuario con items y productos.
+     * Las imágenes se cargan lazy dentro de la transacción del servicio.
+     * Se evita JOIN FETCH p.images para no causar MultipleBagFetchException
+     * (dos @OneToMany a la vez: r.items y p.images).
+     */
     @Query("""
             SELECT DISTINCT r FROM Rental r
             LEFT JOIN FETCH r.items ri
             LEFT JOIN FETCH ri.product p
-            LEFT JOIN FETCH p.images
+            LEFT JOIN FETCH p.category
             WHERE r.user.id = :userId
             ORDER BY r.createdAt DESC
             """)
