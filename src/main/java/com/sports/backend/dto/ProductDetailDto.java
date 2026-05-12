@@ -6,10 +6,7 @@ import com.sports.backend.service.util.StarRating;
 import java.math.BigDecimal;
 import java.util.List;
 
-/**
- * DTO completo para la vista de detalle de un producto.
- * Incluye imágenes, specs, conteo de favoritos, estrellas y si el usuario actual lo marcó.
- */
+
 public record ProductDetailDto(
         Long id,
         String name,
@@ -25,11 +22,7 @@ public record ProductDetailDto(
         int stars,
         boolean isFavorite
 ) {
-    /**
-     * @param product       entidad Product (images y specs lazy-cargadas dentro de transacción)
-     * @param favoriteCount conteo total de favoritos del producto
-     * @param isFavorite    true si el usuario autenticado ya lo marcó como favorito
-     */
+
     public static ProductDetailDto from(Product product, long favoriteCount, boolean isFavorite) {
         return new ProductDetailDto(
                 product.getId(),

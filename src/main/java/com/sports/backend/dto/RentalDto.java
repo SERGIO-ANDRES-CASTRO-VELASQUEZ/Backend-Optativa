@@ -7,11 +7,6 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 
-/**
- * DTO completo del alquiler — incluye todos los ítems.
- * Se usa en: POST /api/rentals (respuesta de creación / ticket),
- *            GET  /api/rentals/{id} (detalle).
- */
 public record RentalDto(
         Long id,
         String code,
@@ -29,9 +24,7 @@ public record RentalDto(
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
 ) {
-    /**
-     * Llamar solo dentro de una transacción activa (accede a colecciones lazy).
-     */
+
     public static RentalDto from(Rental r) {
         List<RentalItemDto> itemDtos = r.getItems() == null
                 ? List.of()

@@ -19,11 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * Servicio que calcula los KPIs del dashboard de administración.
- *
- * <p>Todos los cálculos se realizan en una única transacción de solo lectura.
- */
+
 @Service
 @RequiredArgsConstructor
 public class DashboardService {
@@ -32,11 +28,7 @@ public class DashboardService {
     private final ProductRepository  productRepository;
     private final FavoriteRepository favoriteRepository;
 
-    /**
-     * Calcula todos los KPIs del dashboard para la fecha actual.
-     *
-     * @return {@link DashboardDto} con los indicadores del panel
-     */
+
     @Transactional(readOnly = true)
     public DashboardDto getDashboard() {
 
@@ -80,10 +72,7 @@ public class DashboardService {
     // Helpers privados
     // =========================================================================
 
-    /**
-     * Recibe lista de Object[] { productId, count } y construye los DTOs
-     * cargando cada producto y calculando su favoriteCount real.
-     */
+
     private List<ProductSummaryDto> buildTopProducts(List<Object[]> rows) {
         if (rows.isEmpty()) return List.of();
 
@@ -115,13 +104,7 @@ public class DashboardService {
         return result;
     }
 
-    /**
-     * Calcula cuántas unidades de cada categoría están en alquileres ACTIVO hoy.
-     *
-     * <p>Usa una query JPQL en lugar de añadir un nuevo método al repositorio,
-     * delegando la query directamente al EntityManager a través de JPA (JPQL inline).
-     * Se implementa con una query derivada del tipo que ya hace RentalRepository.
-     */
+
     private List<CategoryOccupationDto> buildCategoryOccupation(LocalDate today) {
         // Query: unidades por categoría en alquileres ACTIVO que cubren hoy
         // Reutiliza la lógica: status=ACTIVO AND startDate <= today AND endDate >= today

@@ -14,61 +14,25 @@ import java.nio.file.StandardCopyOption;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Servicio para almacenar imágenes de productos subidas como multipart.
- *
- * <h2>Cómo funciona</h2>
- * <ol>
- *   <li>El archivo se guarda en {@code ${app.uploads.dir}/products/{uuid}.{ext}}
- *       en el sistema de archivos local.</li>
- *   <li>El método devuelve la URL pública: {@code /files/products/{uuid}.{ext}}.</li>
- *   <li>Spring sirve ese directorio gracias a
- *       que mapea {@code /files/**} a {@code ${app.uploads.dir}}.</li>
- * </ol>
- *
- * <h2>Restricciones validadas</h2>
- * <ul>
- *   <li>Tamaño máximo: 5 MB (también configurado en {@code application.yml}).</li>
- *   <li>Tipos MIME permitidos: {@code image/jpeg}, {@code image/png}, {@code image/webp}.</li>
- * </ul>
- *
- * <h2>Uso en AdminProductController</h2>
- * <pre>
- *   String publicUrl = imageStorageService.store(file);
- *   // publicUrl = "/files/products/a1b2c3d4-....jpg"
- * </pre>
- *
- * <h2>Eliminar una imagen almacenada</h2>
- * <pre>
- *   imageStorageService.delete("/files/products/a1b2c3d4-....jpg");
- * </pre>
- */
 @Service
 public class ImageStorageService {
 
-    /** Tipos MIME de imagen aceptados. */
+
     private static final Set<String> ALLOWED_TYPES = Set.of(
             "image/jpeg", "image/jpg", "image/png", "image/webp"
     );
 
-    /** Tamaño máximo en bytes (5 MB). */
+
     private static final long MAX_SIZE_BYTES = 5L * 1024 * 1024;
 
-    /** Carpeta raíz de uploads, leída de {@code app.uploads.dir}. Default: {@code uploads}. */
     @Value("${app.uploads.dir:uploads}")
     private String uploadsDir;
 
-    /** Prefijo de la URL pública, leída de {@code app.uploads.public-base-url}. Default: {@code /files}. */
     @Value("${app.uploads.public-base-url:/files}")
     private String publicBaseUrl;
 
-    /** Ruta absoluta al subdirectorio de imágenes de productos. */
     private Path productsDir;
 
-    /**
-     * Crea el directorio {@code uploads/products/} al arrancar la aplicación
-     * si no existe todavía.
-     */
     @PostConstruct
     void init() {
         productsDir = Paths.get(uploadsDir).resolve("products").toAbsolutePath().normalize();
@@ -80,14 +44,7 @@ public class ImageStorageService {
         }
     }
 
-    /**
-     * Almacena un archivo multipart en disco y devuelve su URL pública.
-     *
-     * @param file archivo recibido desde el controller (multipart/form-data).
-     * @return URL pública relativa, p. ej. {@code /files/products/abc123.jpg}.
-     * @throws ApiException 400 si el archivo está vacío, supera el tamaño o el tipo no está permitido.
-     */
-    public String store(MultipartFile file) {
+   public String store(MultipartFile file) {
         // ── Validaciones ─────────────────────────────────────────────────────
         if (file == null || file.isEmpty()) {
             throw ApiException.badRequest("El archivo de imagen no puede estar vacío");
@@ -126,15 +83,6 @@ public class ImageStorageService {
         return publicBaseUrl + "/products/" + filename;
     }
 
-    /**
-     * Elimina del disco la imagen asociada a la URL pública dada.
-     *
-     * <p>Si el archivo no existe, la operación es silenciosa (no lanza excepción).
-     * Solo elimina archivos que estén dentro de {@code productsDir} (seguridad).
-     *
-     * @param publicUrl URL pública almacenada en {@code product_images.url},
-     *                  p. ej. {@code /files/products/abc123.jpg}.
-     */
     public void delete(String publicUrl) {
         if (publicUrl == null || !publicUrl.startsWith(publicBaseUrl + "/products/")) {
             // URL externa (http://...) o ruta no gestionada por este servicio → ignorar
@@ -159,10 +107,6 @@ public class ImageStorageService {
 
     // ── Helpers privados ─────────────────────────────────────────────────────
 
-    /**
-     * Extrae la extensión del nombre original del archivo.
-     * Si no tiene extensión válida, la infiere del content-type.
-     */
     private String extractExtension(String originalFilename, String contentType) {
         if (originalFilename != null && originalFilename.contains(".")) {
             String ext = originalFilename.substring(originalFilename.lastIndexOf('.') + 1)

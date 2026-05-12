@@ -19,7 +19,7 @@ public class CategoryService {
         this.categoryRepository = categoryRepository;
     }
 
-    /** Devuelve todas las categorías ordenadas por nombre. */
+
     public List<CategoryDto> listAll() {
         return categoryRepository.findAll(Sort.by("name"))
                 .stream()
@@ -27,7 +27,7 @@ public class CategoryService {
                 .toList();
     }
 
-    /** Crea una nueva categoría. */
+
     @Transactional
     public CategoryDto create(CategoryDto dto) {
         Category category = Category.builder()

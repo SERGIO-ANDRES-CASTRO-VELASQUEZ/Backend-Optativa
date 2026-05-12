@@ -44,28 +44,6 @@ public class RentalService {
     // POST /api/rentals  — crear alquiler
     // =========================================================================
 
-    /**
-     * Crea un nuevo alquiler para el usuario autenticado.
-     *
-     * <p>Validaciones que se aplican en orden:
-     * <ol>
-     *   <li>startDate ≥ hoy</li>
-     *   <li>endDate > startDate (mínimo 1 día)</li>
-     *   <li>Por cada ítem: producto existe y está activo</li>
-     *   <li>Por cada ítem: stock disponible ≥ cantidad solicitada</li>
-     * </ol>
-     *
-     * <p>El código de alquiler se genera como {@code SR-{YYYY}-{NNNNN}}
-     * (ej. SR-2026-00003). Es secuencial por año, basado en el conteo de
-     * alquileres con ese prefijo. No es 100% atómico (sin lock de BD) pero
-     * es suficiente para el alcance del proyecto.
-     *
-     * <p>El pago es SIMULADO: solo se persiste el método elegido.
-     *
-     * @param userId ID del cliente autenticado.
-     * @param req    Datos del alquiler (fechas, método de pago, ítems).
-     * @return RentalDto con el detalle completo del alquiler creado.
-     */
     @Transactional
     public RentalDto create(Long userId, CreateRentalRequest req) {
 
@@ -153,16 +131,6 @@ public class RentalService {
     // GET /api/rentals/mine  — mis alquileres
     // =========================================================================
 
-    /**
-     * Devuelve el historial completo de alquileres del usuario, ordenado
-     * del más reciente al más antiguo.
-     *
-     * <p>Usa {@code findByUserIdWithItemsAndProducts} para cargar todo en
-     * una sola query y evitar el problema N+1.
-     *
-     * @param userId ID del cliente autenticado.
-     * @return Lista de resúmenes (sin detalle de ítems).
-     */
     @Transactional(readOnly = true)
     public List<RentalSummaryDto> findMine(Long userId) {
         return rentalRepository.findByUserIdWithItemsAndProducts(userId)
@@ -175,18 +143,6 @@ public class RentalService {
     // GET /api/rentals/{id}  — detalle de un alquiler
     // =========================================================================
 
-    /**
-     * Devuelve el detalle completo de un alquiler, verificando que pertenece
-     * al usuario solicitante.
-     *
-     * <p>En Fase 4, el panel de administración usará un método distinto sin
-     * la verificación de propiedad.
-     *
-     * @param userId ID del cliente autenticado.
-     * @param id     ID del alquiler.
-     * @return RentalDto con todos los ítems.
-     * @throws ApiException 404 si no existe o no pertenece al usuario.
-     */
     @Transactional(readOnly = true)
     public RentalDto findById(Long userId, Long id) {
         Rental rental = rentalRepository.findByIdWithItems(id)
@@ -204,26 +160,6 @@ public class RentalService {
     // POST /api/rentals/{id}/extend  — extender fecha de devolución
     // =========================================================================
 
-    /**
-     * Extiende la fecha de fin de un alquiler PENDIENTE o ACTIVO.
-     *
-     * <p>Pasos:
-     * <ol>
-     *   <li>Verifica propiedad y estado válido (PENDIENTE | ACTIVO).</li>
-     *   <li>Valida que {@code newEndDate} es posterior a la fecha actual de fin.</li>
-     *   <li>Comprueba stock disponible para el período de extensión
-     *       ({@code oldEndDate + 1 día → newEndDate}) por cada ítem.
-     *       El alquiler actual NO se cuenta en ese rango porque su endDate
-     *       es anterior al inicio del período de extensión.</li>
-     *   <li>Recalcula {@code days}, {@code lineTotal} de cada ítem y
-     *       {@code subtotal} / {@code total} del alquiler.</li>
-     * </ol>
-     *
-     * @param userId  ID del cliente autenticado.
-     * @param id      ID del alquiler a extender.
-     * @param req     Contiene la nueva fecha de fin.
-     * @return RentalDto actualizado.
-     */
     @Transactional
     public RentalDto extend(Long userId, Long id, ExtendRentalRequest req) {
 
@@ -292,15 +228,6 @@ public class RentalService {
     // POST /api/rentals/{id}/cancel  — cancelar alquiler
     // =========================================================================
 
-    /**
-     * Cancela un alquiler en estado PENDIENTE.
-     *
-     * <p>Solo se permite cancelar mientras el alquiler está PENDIENTE.
-     * Una vez en ACTIVO, el cliente debe contactar a la tienda (Fase 4).
-     *
-     * @param userId ID del cliente autenticado.
-     * @param id     ID del alquiler a cancelar.
-     */
     @Transactional
     public void cancel(Long userId, Long id) {
         Rental rental = rentalRepository.findByIdWithItems(id)
@@ -324,16 +251,6 @@ public class RentalService {
     // Fase 4 — Panel admin
     // =========================================================================
 
-    /**
-     * Lista TODOS los alquileres con filtros opcionales para el panel admin.
-     *
-     * <p>Búsqueda {@code q} busca en el código del alquiler y el email del cliente.
-     *
-     * @param status  filtro por estado (null = todos)
-     * @param q       búsqueda libre en código y email del cliente
-     * @param pageable paginación
-     * @return página de {@link AdminRentalSummaryDto}
-     */
     @Transactional(readOnly = true)
     public Page<AdminRentalSummaryDto> findAllAdmin(RentalStatus status, String q, Pageable pageable) {
 
@@ -369,13 +286,6 @@ public class RentalService {
         return rentalRepository.findAll(spec, pageable).map(AdminRentalSummaryDto::from);
     }
 
-    /**
-     * Devuelve el detalle completo de un alquiler sin verificar propiedad.
-     * Para uso exclusivo del panel admin.
-     *
-     * @param id id del alquiler
-     * @throws ApiException 404 si no existe
-     */
     @Transactional(readOnly = true)
     public RentalDto findByIdAdmin(Long id) {
         Rental rental = rentalRepository.findByIdWithItems(id)
@@ -383,20 +293,6 @@ public class RentalService {
         return RentalDto.from(rental);
     }
 
-    /**
-     * Crea un alquiler desde el mostrador admin.
-     *
-     * <p>Igual que {@link #create(Long, CreateRentalRequest)} pero:
-     * <ul>
-     *   <li>El titular del alquiler es {@code clientId}, no el admin.</li>
-     *   <li>Se registra {@code createdBy = admin} para auditoría.</li>
-     *   <li>La fecha de inicio puede ser hoy (sin restricción de futuro).</li>
-     * </ul>
-     *
-     * @param adminId  id del admin que opera en mostrador
-     * @param clientId id del cliente titular del alquiler
-     * @param req      datos del alquiler
-     */
     @Transactional
     public RentalDto createForClient(Long adminId, Long clientId, CreateRentalRequest req) {
 
@@ -475,14 +371,6 @@ public class RentalService {
         return RentalDto.from(rental);
     }
 
-    /**
-     * Cambia el estado de un alquiler de forma forzada (sin restricciones de flujo).
-     * Solo disponible para admins.
-     *
-     * @param rentalId  id del alquiler
-     * @param newStatus nuevo estado a asignar
-     * @throws ApiException 404 si el alquiler no existe
-     */
     @Transactional
     public RentalDto forceChangeStatus(Long rentalId, RentalStatus newStatus) {
         Rental rental = rentalRepository.findByIdWithItems(rentalId)

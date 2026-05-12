@@ -32,11 +32,11 @@ public class ProductImage {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    /** URL externa o ruta relativa /img/xxx.jpg */
+    
     @Column(nullable = false, length = 500)
     private String url;
 
-    /** Orden visual ascendente; 0 = imagen principal */
+
     @Column(name = "order_index", nullable = false)
     private Integer orderIndex;
 }

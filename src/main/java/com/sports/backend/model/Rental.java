@@ -27,12 +27,12 @@ public class Rental {
     @Column(nullable = false, unique = true, length = 20)
     private String code;
 
-    // Cliente dueño del alquiler
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    // Admin que creó en mostrador — null si lo creó el propio cliente
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_id")
     private User createdBy;
@@ -54,7 +54,7 @@ public class Rental {
     @Column(nullable = false, precision = 14, scale = 2)
     private BigDecimal subtotal;
 
-    // Depósito / garantía — por defecto 0 en Fase 3
+
     @Builder.Default
     @Column(nullable = false, precision = 14, scale = 2)
     private BigDecimal deposit = BigDecimal.ZERO;
@@ -62,7 +62,7 @@ public class Rental {
     @Column(nullable = false, precision = 14, scale = 2)
     private BigDecimal total;
 
-    // CascadeType.ALL + orphanRemoval: los items se persisten y eliminan con el Rental
+
     @Builder.Default
     @OneToMany(mappedBy = "rental", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RentalItem> items = new ArrayList<>();

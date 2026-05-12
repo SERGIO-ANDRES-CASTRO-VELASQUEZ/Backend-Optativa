@@ -48,8 +48,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
         } catch (JwtException ex) {
-            // Token invalido o expirado: limpiamos contexto y dejamos pasar.
-            // Si la ruta requiere auth, Spring Security devuelve 401 por su cuenta.
             SecurityContextHolder.clearContext();
         }
 

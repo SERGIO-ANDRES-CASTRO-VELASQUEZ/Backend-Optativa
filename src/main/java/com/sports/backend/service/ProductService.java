@@ -46,16 +46,7 @@ public class ProductService {
     // Vista pública (cliente)
     // =========================================================================
 
-    /**
-     * Lista productos ACTIVOS con filtros opcionales combinables.
-     *
-     * @param categoryId filtra por categoría (null = todas)
-     * @param q          búsqueda libre en el nombre (null o blank = sin filtro)
-     * @param minPrice   precio mínimo por día (null = sin límite inferior)
-     * @param maxPrice   precio máximo por día (null = sin límite superior)
-     * @param pageable   paginación y ordenación (default page=0, size=20, sort=name,asc)
-     */
-    public Page<ProductSummaryDto> list(Long categoryId, String q,
+   public Page<ProductSummaryDto> list(Long categoryId, String q,
                                         BigDecimal minPrice, BigDecimal maxPrice,
                                         Pageable pageable) {
         Specification<Product> spec = buildSpec(true, categoryId, q, minPrice, maxPrice);
@@ -68,12 +59,6 @@ public class ProductService {
                 ProductSummaryDto.from(p, favCounts.getOrDefault(p.getId(), 0L)));
     }
 
-    /**
-     * Devuelve el detalle completo de un producto ACTIVO (uso público).
-     *
-     * @param id            id del producto
-     * @param currentUserId id del usuario autenticado (null si es anónimo)
-     */
     public ProductDetailDto getById(Long id, Long currentUserId) {
         Product product = productRepository.findById(id)
                 .filter(Product::isActive)
@@ -90,18 +75,6 @@ public class ProductService {
     // Vista admin — solo lectura
     // =========================================================================
 
-    /**
-     * Lista TODOS los productos (activos e inactivos) para el panel admin.
-     *
-     * <p>Acepta los mismos filtros que el listado público excepto que
-     * NO filtra por {@code active}: el admin puede ver el inventario completo.
-     *
-     * <p>Usado por {@code GET /api/admin/products}.
-     *
-     * @param categoryId filtra por categoría (null = todas)
-     * @param q          búsqueda libre en el nombre (null = sin filtro)
-     * @param pageable   paginación
-     */
     public Page<ProductSummaryDto> listAdmin(Long categoryId, String q, Pageable pageable) {
         Specification<Product> spec = buildSpec(false, categoryId, q, null, null);
         Page<Product> productPage = productRepository.findAll(spec, pageable);
@@ -113,14 +86,6 @@ public class ProductService {
                 ProductSummaryDto.from(p, favCounts.getOrDefault(p.getId(), 0L)));
     }
 
-    /**
-     * Detalle de un producto para el admin, sin filtrar por {@code active}.
-     *
-     * <p>El admin puede ver productos desactivados para editarlos o reactivarlos.
-     * Usado por {@code GET /api/admin/products/{id}}.
-     *
-     * @param id id del producto
-     */
     public AdminProductDto getByIdAdmin(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> ApiException.notFound("Producto no encontrado"));
@@ -132,17 +97,6 @@ public class ProductService {
     // Vista admin — escritura
     // =========================================================================
 
-    /**
-     * Crea un producto nuevo.
-     *
-     * <p>Si {@code request.active()} es {@code null}, el producto se crea activo.
-     * Las imágenes y specs opcionales del request se persisten en cascada.
-     *
-     * <p>Usado por {@code POST /api/admin/products}.
-     *
-     * @param request datos del nuevo producto
-     * @return AdminProductDto con el producto recién creado
-     */
     @Transactional
     public AdminProductDto create(CreateProductRequest request) {
         Category category = categoryRepository.findById(request.categoryId())
@@ -187,19 +141,6 @@ public class ProductService {
         return AdminProductDto.from(product, 0L); // recién creado: 0 favoritos
     }
 
-    /**
-     * Edita un producto existente.
-     *
-     * <p>Solo actualiza los campos no-null del request (patch semántico).
-     * Si {@code request.specs()} no es null, reemplaza TODAS las specs actuales.
-     * Para imágenes, usar los endpoints específicos de imagen.
-     *
-     * <p>Usado por {@code PUT /api/admin/products/{id}}.
-     *
-     * @param id      id del producto a editar
-     * @param request campos a actualizar
-     * @return AdminProductDto con el estado actualizado
-     */
     @Transactional
     public AdminProductDto update(Long id, UpdateProductRequest request) {
         Product product = productRepository.findById(id)
@@ -244,17 +185,6 @@ public class ProductService {
         return AdminProductDto.from(product, favCount);
     }
 
-    /**
-     * Desactiva un producto (soft delete).
-     *
-     * <p>El producto queda invisible en el catálogo público ({@code active = false})
-     * pero no se elimina de la BD: los alquileres históricos siguen referenciándolo.
-     *
-     * <p>Usado por {@code DELETE /api/admin/products/{id}}.
-     *
-     * @param id id del producto a desactivar
-     * @throws ApiException 404 si no existe
-     */
     @Transactional
     public void deactivate(Long id) {
         Product product = productRepository.findById(id)
@@ -263,22 +193,6 @@ public class ProductService {
         productRepository.save(product);
     }
 
-    /**
-     * Añade una imagen (URL ya almacenada en disco por {@code ImageStorageService})
-     * a la lista de imágenes del producto.
-     *
-     * <p>La imagen se añade al final (orderIndex = max + 1).
-     *
-     * <p>Llamado desde {@code AdminProductController.uploadImage} después de
-     * que {@code ImageStorageService.store(file)} haya guardado el archivo y
-     * devuelto la URL pública.
-     *
-     * <p>Usado por {@code POST /api/admin/products/{id}/images}.
-     *
-     * @param productId id del producto
-     * @param imageUrl  URL pública de la imagen ya almacenada
-     * @return AdminProductDto actualizado
-     */
     @Transactional
     public AdminProductDto addImage(Long productId, String imageUrl) {
         Product product = productRepository.findById(productId)
@@ -300,21 +214,6 @@ public class ProductService {
         return AdminProductDto.from(product, favCount);
     }
 
-    /**
-     * Elimina una imagen de un producto.
-     *
-     * <p>El caller ({@code AdminProductController}) debe invocar
-     * {@code ImageStorageService.delete(url)} para borrar el archivo físico
-     * si la URL es una imagen almacenada localmente (no una URL externa).
-     *
-     * <p>Usado por {@code DELETE /api/admin/products/{id}/images/{imageId}}.
-     *
-     * @param productId id del producto
-     * @param imageId   id de la imagen a eliminar
-     * @return la URL de la imagen eliminada (para que el controller borre el archivo)
-     * @throws ApiException 404 si el producto o la imagen no existen o la imagen
-     *                      no pertenece al producto
-     */
     @Transactional
     public String removeImage(Long productId, Long imageId) {
         Product product = productRepository.findById(productId)
@@ -337,12 +236,6 @@ public class ProductService {
     // Helpers privados
     // =========================================================================
 
-    /**
-     * Construye la {@link Specification} de filtros para el listado de productos.
-     *
-     * @param onlyActive si {@code true}, añade predicado {@code active = true}.
-     *                   Pasar {@code false} para el panel admin.
-     */
     private Specification<Product> buildSpec(boolean onlyActive,
                                               Long categoryId, String q,
                                               BigDecimal minPrice, BigDecimal maxPrice) {
@@ -372,7 +265,6 @@ public class ProductService {
         };
     }
 
-    /** Convierte el resultado de la query batch en un Map&lt;productId, count&gt;. */
     private Map<Long, Long> batchFavoriteCounts(List<Long> productIds) {
         Map<Long, Long> map = new HashMap<>();
         if (productIds.isEmpty()) return map;

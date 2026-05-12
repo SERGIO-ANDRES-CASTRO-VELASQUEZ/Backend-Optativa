@@ -5,10 +5,6 @@ import com.sports.backend.service.util.StarRating;
 
 import java.math.BigDecimal;
 
-/**
- * DTO compacto para el listado del catálogo.
- * Incluye solo los campos necesarios para pintar una tarjeta de producto.
- */
 public record ProductSummaryDto(
         Long id,
         String name,
@@ -20,10 +16,7 @@ public record ProductSummaryDto(
         long favoriteCount,
         int stars
 ) {
-    /**
-     * @param product       entidad Product (con images lazy-cargadas dentro de transacción)
-     * @param favoriteCount conteo de favoritos pre-calculado
-     */
+
     public static ProductSummaryDto from(Product product, long favoriteCount) {
         String mainImageUrl = product.getImages().stream()
                 .filter(img -> img.getOrderIndex() == 0)

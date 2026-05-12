@@ -31,7 +31,7 @@ public class Category {
     @Column(nullable = false, length = 60)
     private String name;
 
-    /** Nombre del icono Boxicons, ej. "bx-cycling" */
+
     @Column(length = 60)
     private String icon;
 }

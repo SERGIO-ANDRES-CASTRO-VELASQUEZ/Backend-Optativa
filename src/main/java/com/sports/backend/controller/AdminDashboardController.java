@@ -12,13 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Endpoint del dashboard de administración.
- *
- * <pre>
- *   GET /api/admin/dashboard  → KPIs del panel
- * </pre>
- */
+
 @RestController
 @RequestMapping("/api/admin/dashboard")
 @RequiredArgsConstructor

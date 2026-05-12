@@ -26,15 +26,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Siembra datos iniciales en la base de datos si no existen.
- * Se ejecuta una sola vez al arrancar la aplicación.
- *
- * Fase 1: admin inicial.
- * Fase 2: 7 categorías + 12 productos demo (añadidos Fútbol x2, Boxeo x2).
- * Fase 3: cliente demo para pruebas de alquileres.
- * Fase 4: usuarios extra + alquileres demo para probar el panel admin y dashboard.
- */
 @Component
 public class DataSeeder implements CommandLineRunner {
 

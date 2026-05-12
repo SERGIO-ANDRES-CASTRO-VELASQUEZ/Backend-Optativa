@@ -1,9 +1,6 @@
 package com.sports.backend.service.util;
 
 /**
- * Convierte el conteo de favoritos de un producto en una calificación de 0 a 5 estrellas.
- *
- * Tramos definidos en PROYECTO.md §10.1:
  *  0        → 0 ★
  *  1–2      → 1 ★
  *  3–5      → 2 ★

@@ -14,10 +14,7 @@ public record RentalItemDto(
         BigDecimal unitPrice,
         BigDecimal lineTotal
 ) {
-    /**
-     * Llamar solo dentro de una transacción activa.
-     * Accede a product.images (lazy) — fuera de transacción lanza LazyInitializationException.
-     */
+
     public static RentalItemDto from(RentalItem ri) {
         String imgUrl = (ri.getProduct().getImages() == null || ri.getProduct().getImages().isEmpty())
                 ? null

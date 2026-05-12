@@ -32,11 +32,11 @@ public class ProductSpec {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    /** Nombre de la característica, ej. "Peso", "Velocidades" */
+
     @Column(name = "spec_key", nullable = false, length = 60)
     private String key;
 
-    /** Valor de la característica, ej. "13.5 kg", "21 marchas Shimano" */
+
     @Column(name = "spec_value", nullable = false, length = 150)
     private String value;
 }

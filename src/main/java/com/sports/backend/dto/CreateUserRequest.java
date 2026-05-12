@@ -6,16 +6,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-/**
- * Body de {@code POST /api/admin/users} — crear un usuario desde el panel admin.
- *
- * <p>A diferencia del registro público ({@link RegisterRequest}), el admin puede:
- * <ul>
- *   <li>Especificar el rol ({@code ADMIN} o {@code CLIENT}).</li>
- *   <li>Añadir teléfono y cédula directamente.</li>
- *   <li>Activar o desactivar al usuario desde el inicio.</li>
- * </ul>
- */
 public record CreateUserRequest(
 
         @NotBlank(message = "El nombre completo es obligatorio")
@@ -40,9 +30,9 @@ public record CreateUserRequest(
         @Size(max = 30, message = "La cédula no puede superar 30 caracteres")
         String idDocument,
 
-        /** Si es {@code null}, se asigna {@code CLIENT} por defecto. */
+
         Role role,
 
-        /** Si es {@code null}, el usuario se crea activo ({@code true}) por defecto. */
+
         Boolean active
 ) {}

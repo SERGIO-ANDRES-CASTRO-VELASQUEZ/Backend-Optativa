@@ -20,13 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Servicio de administración de usuarios.
- *
- * <p>Expone las operaciones del panel admin sobre usuarios:
- * listado paginado con búsqueda, detalle, creación, edición,
- * activar/desactivar y borrado (hard delete con guardas de negocio).
- */
 @Service
 @RequiredArgsConstructor
 public class AdminUserService {
@@ -39,13 +32,7 @@ public class AdminUserService {
     // GET /api/admin/users — listado paginado con búsqueda
     // =========================================================================
 
-    /**
-     * Lista todos los usuarios con paginación y búsqueda opcional.
-     *
-     * @param q        texto libre que se busca en fullName, email y username
-     * @param pageable paginación y ordenación
-     * @return página de {@link AdminUserDto}
-     */
+
     @Transactional(readOnly = true)
     public Page<AdminUserDto> listAll(String q, Pageable pageable) {
         Specification<User> spec = buildSpec(q);
@@ -56,11 +43,7 @@ public class AdminUserService {
     // GET /api/admin/users/{id} — detalle
     // =========================================================================
 
-    /**
-     * Devuelve el detalle de un usuario por id.
-     *
-     * @throws ApiException 404 si no existe
-     */
+
     @Transactional(readOnly = true)
     public AdminUserDto getById(Long id) {
         return AdminUserDto.from(findOrThrow(id));
@@ -70,14 +53,7 @@ public class AdminUserService {
     // POST /api/admin/users — crear usuario
     // =========================================================================
 
-    /**
-     * Crea un usuario desde el panel admin.
-     *
-     * <p>El admin puede asignar cualquier rol. Si no indica rol, se usa CLIENT.
-     * Si no indica active, el usuario se crea activo.
-     *
-     * @throws ApiException 409 si el email o username ya existen
-     */
+
     @Transactional
     public AdminUserDto create(CreateUserRequest req) {
 
@@ -106,11 +82,7 @@ public class AdminUserService {
     // PUT /api/admin/users/{id} — editar (patch semántico)
     // =========================================================================
 
-    /**
-     * Edita un usuario; solo actualiza campos no-null del request.
-     *
-     * @throws ApiException 404 si no existe, 409 si email/username duplicados
-     */
+
     @Transactional
     public AdminUserDto update(Long id, UpdateUserRequest req) {
 
@@ -154,11 +126,7 @@ public class AdminUserService {
     // PUT /api/admin/users/{id}/active — activar / desactivar
     // =========================================================================
 
-    /**
-     * Cambia el estado activo de un usuario sin tocar el resto de sus datos.
-     *
-     * @throws ApiException 404 si no existe
-     */
+
     @Transactional
     public AdminUserDto toggleActive(Long id, boolean active) {
         User user = findOrThrow(id);
@@ -170,15 +138,7 @@ public class AdminUserService {
     // DELETE /api/admin/users/{id} — hard delete
     // =========================================================================
 
-    /**
-     * Elimina definitivamente un usuario de la BD.
-     *
-     * <p>Si el usuario tiene alquileres registrados, lanza 400 y sugiere
-     * usar {@link #toggleActive(Long, boolean)} con {@code false} en su lugar.
-     *
-     * @throws ApiException 404 si no existe
-     * @throws ApiException 400 si el usuario tiene alquileres
-     */
+
     @Transactional
     public void delete(Long id) {
         findOrThrow(id); // valida que existe
@@ -201,10 +161,7 @@ public class AdminUserService {
                 .orElseThrow(() -> ApiException.notFound("Usuario no encontrado: id=" + id));
     }
 
-    /**
-     * Construye la Specification de búsqueda.
-     * Si {@code q} es null o blank, devuelve todos los usuarios.
-     */
+
     private Specification<User> buildSpec(String q) {
         return (root, query, cb) -> {
             if (q == null || q.isBlank()) return cb.conjunction();

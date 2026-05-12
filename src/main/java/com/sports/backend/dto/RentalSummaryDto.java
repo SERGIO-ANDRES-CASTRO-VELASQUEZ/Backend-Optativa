@@ -7,11 +7,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
-/**
- * DTO liviano para el listado de alquileres (GET /api/rentals/mine).
- * No incluye la lista completa de ítems para no sobrecargar el listado.
- * El detalle completo se obtiene con GET /api/rentals/{id} → RentalDto.
- */
 public record RentalSummaryDto(
         Long id,
         String code,

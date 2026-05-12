@@ -10,18 +10,6 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.util.List;
 
-/**
- * Body de {@code POST /api/admin/products} — crear un producto nuevo.
- *
- * <p>Las imágenes se pueden adjuntar después via multipart con
- * {@code POST /api/admin/products/{id}/images}, pero también se aceptan
- * URLs externas en este request para facilitar el seeder y tests.
- *
- * <p>Las specs son pares clave/valor (ej. "Peso" → "13 kg").
- * Si se omiten, el producto queda sin specs y pueden añadirse después.
- *
- * <p>Todos los mensajes de validación están en español.
- */
 public record CreateProductRequest(
 
         @NotBlank(message = "El nombre es obligatorio")
@@ -42,25 +30,17 @@ public record CreateProductRequest(
         @Min(value = 0, message = "El stock no puede ser negativo")
         Integer stock,
 
-        /** Si es {@code null} o {@code true}, el producto se crea activo (visible en catálogo). */
         Boolean active,
 
-        /**
-         * URLs externas de imágenes (opcional).
-         * Para subir archivos usar {@code POST /api/admin/products/{id}/images}.
-         * El primer elemento de la lista tendrá {@code orderIndex = 0}.
-         */
+
         List<String> imageUrls,
 
-        /** Especificaciones técnicas opcionales. */
+
         @Valid
         List<SpecRequest> specs
 ) {
 
-    /**
-     * Sub-record para un par clave/valor de especificación técnica.
-     * Ejemplo: {@code new SpecRequest("Peso", "13.5 kg")}.
-     */
+
     public record SpecRequest(
             @NotBlank(message = "La clave de la especificación es obligatoria")
             @Size(max = 60, message = "La clave no puede superar 60 caracteres")

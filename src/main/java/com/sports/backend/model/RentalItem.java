@@ -29,16 +29,15 @@ public class RentalItem {
     @Column(nullable = false)
     private int quantity;
 
-    // Días alquilados — se desnormaliza para facilitar recálculo sin leer el Rental padre
+
     @Column(nullable = false)
     private int days;
 
-    // Snapshot del pricePerDay en el momento de crear el alquiler.
-    // NUNCA recalcular a partir de product.pricePerDay en alquileres existentes.
+
     @Column(name = "unit_price", nullable = false, precision = 12, scale = 2)
     private BigDecimal unitPrice;
 
-    // quantity * days * unitPrice
+
     @Column(name = "line_total", nullable = false, precision = 14, scale = 2)
     private BigDecimal lineTotal;
 }

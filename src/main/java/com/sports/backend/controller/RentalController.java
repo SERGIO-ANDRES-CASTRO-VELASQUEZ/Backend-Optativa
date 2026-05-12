@@ -23,24 +23,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/**
- * Controlador de alquileres del cliente.
- *
- * <p>Todos los endpoints requieren autenticación JWT. La verificación de
- * propiedad (que el alquiler pertenece al usuario que lo solicita) se realiza
- * en {@link RentalService}, no aquí.
- *
- * <p>Los endpoints de administración (listado global, cambio forzado de estado,
- * creación en mostrador) se añadirán en Fase 4 bajo {@code /api/admin/rentals}.
- *
- * <pre>
- *   POST   /api/rentals              → crear alquiler          (cliente)
- *   GET    /api/rentals/mine         → mis alquileres          (cliente)
- *   GET    /api/rentals/{id}         → detalle de un alquiler  (cliente)
- *   POST   /api/rentals/{id}/extend  → extender devolución     (cliente)
- *   POST   /api/rentals/{id}/cancel  → cancelar (solo PENDIENTE)(cliente)
- * </pre>
- */
 @RestController
 @RequestMapping("/api/rentals")
 @RequiredArgsConstructor
@@ -55,14 +37,6 @@ public class RentalController {
     // POST /api/rentals  — crear alquiler
     // -------------------------------------------------------------------------
 
-    /**
-     * Crea un nuevo alquiler para el usuario autenticado.
-     *
-     * <p>El sistema valida disponibilidad de stock para el rango de fechas
-     * antes de persistir. El pago es simulado (solo se guarda el método).
-     *
-     * @return 201 Created con el {@link RentalDto} completo (sirve como ticket).
-     */
     @PostMapping
     @Operation(
             summary = "Crear alquiler",
@@ -82,16 +56,6 @@ public class RentalController {
     // GET /api/rentals/mine  — mis alquileres
     // -------------------------------------------------------------------------
 
-    /**
-     * Lista todos los alquileres del usuario autenticado, del más reciente
-     * al más antiguo.
-     *
-     * <p>Devuelve {@link RentalSummaryDto} (sin lista de ítems detallada)
-     * para no sobrecargar el listado. Para el detalle completo usar
-     * {@code GET /api/rentals/{id}}.
-     *
-     * @return 200 OK con la lista de resúmenes (puede ser vacía).
-     */
     @GetMapping("/mine")
     @Operation(
             summary = "Mis alquileres",
@@ -109,15 +73,7 @@ public class RentalController {
     // GET /api/rentals/{id}  — detalle de un alquiler
     // -------------------------------------------------------------------------
 
-    /**
-     * Devuelve el detalle completo de un alquiler, incluyendo todos sus ítems.
-     *
-     * <p>Si el alquiler no existe o no pertenece al usuario autenticado,
-     * se devuelve 404 (no 403) para no revelar la existencia del recurso.
-     *
-     * @param id ID del alquiler.
-     * @return 200 OK con el {@link RentalDto} completo.
-     */
+
     @GetMapping("/{id}")
     @Operation(
             summary = "Detalle de un alquiler",
@@ -135,17 +91,7 @@ public class RentalController {
     // POST /api/rentals/{id}/extend  — extender devolución
     // -------------------------------------------------------------------------
 
-    /**
-     * Extiende la fecha de devolución de un alquiler PENDIENTE o ACTIVO.
-     *
-     * <p>Valida disponibilidad de stock en el período de extensión
-     * (desde el día siguiente al fin actual hasta la nueva fecha).
-     * Recalcula automáticamente los totales.
-     *
-     * @param id  ID del alquiler.
-     * @param req Nueva fecha de fin.
-     * @return 200 OK con el {@link RentalDto} actualizado.
-     */
+
     @PostMapping("/{id}/extend")
     @Operation(
             summary = "Extender fecha de devolución",
@@ -165,16 +111,7 @@ public class RentalController {
     // POST /api/rentals/{id}/cancel  — cancelar alquiler
     // -------------------------------------------------------------------------
 
-    /**
-     * Cancela un alquiler en estado PENDIENTE.
-     *
-     * <p>No se puede cancelar un alquiler en cualquier otro estado.
-     * Para cancelar un alquiler ACTIVO, el cliente debe contactar
-     * directamente con la tienda (flujo de Fase 4 — admin).
-     *
-     * @param id ID del alquiler.
-     * @return 204 No Content si se canceló correctamente.
-     */
+
     @PostMapping("/{id}/cancel")
     @Operation(
             summary = "Cancelar alquiler",

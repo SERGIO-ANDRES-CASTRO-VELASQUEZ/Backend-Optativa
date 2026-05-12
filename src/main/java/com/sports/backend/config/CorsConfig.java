@@ -16,9 +16,6 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
 
-        // allowedOriginPatterns soporta wildcards → cubre cualquier puerto de Live Server
-        // (5500, 5501, 5502, 5503, ...) sin necesidad de listarlos uno a uno.
-        // En producción reemplazar por el dominio real.
         cfg.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",
                 "http://127.0.0.1:*"

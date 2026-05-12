@@ -13,13 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * Tarea programada que marca como {@code VENCIDO} los alquileres
- * {@code ACTIVO} cuya fecha de fin ha pasado.
- *
- * <p>Se ejecuta todos los días a las 02:00 AM servidor.
- * Requiere {@code @EnableScheduling} en {@link com.sports.backend.BackendApplication}.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -27,10 +20,6 @@ public class RentalScheduler {
 
     private final RentalRepository rentalRepository;
 
-    /**
-     * Busca alquileres ACTIVO con endDate anterior a hoy y los marca VENCIDO.
-     * Cron: segundo=0, minuto=0, hora=2, cualquier día/mes/año.
-     */
     @Scheduled(cron = "0 0 2 * * *")
     @Transactional
     public void markOverdueRentals() {

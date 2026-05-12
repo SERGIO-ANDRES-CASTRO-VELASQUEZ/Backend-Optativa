@@ -29,18 +29,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Controlador del panel admin para gestión de alquileres.
- *
- * <p>Todos los endpoints requieren rol {@code ADMIN}.
- *
- * <pre>
- *   GET  /api/admin/rentals             → findAllAdmin  (?status=, ?q=, paginado)
- *   GET  /api/admin/rentals/{id}        → detalle completo sin verificar propiedad
- *   POST /api/admin/rentals             → createForClient  (crear desde mostrador)
- *   PUT  /api/admin/rentals/{id}/status → forceChangeStatus
- * </pre>
- */
 @RestController
 @RequestMapping("/api/admin/rentals")
 @RequiredArgsConstructor
